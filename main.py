@@ -16,30 +16,31 @@ DIR_RIGHT = ">"
 DIR_DOWN = "v"
 HEADER_CURRENT = MAP_SELF   # change this
 
+class MazeMap():
+    def __init__(self, bound):
+        self._bound = bound
+        self._mapdata = [[MAP_UNEXPLORED for y in range(self._bound)] for x in self._map_limit]
+
+    def get_cell(self, x, y):
+        return self._mapdata[x][y]
+
+    def print_map(self):
+        for x in range(self._map_limit):
+            mapline = []
+            for y in range(self._map_limit):                
+                mapline.append(str(self.get_cell(x, y)))
+            print(" ".join(mapline))
+
+    def is_explored(self, x, y):
+        return self.get_cell(x, y) in [MAP_FULLY_EXPLORED, MAP_PARTIAL_EXPLORED, MAP_UNEXPLORED]
+    
+
 class MazeWalker():
     def __init__(self, client):
         self._client = client
         self._map_limit = 10
         self._init_map()
         self.location = (0,0)
-        
-    def print_map(self):
-        for x in range(self._map_limit):
-            mapline = []
-            for y in range(self._map_limit):                
-                mapline.append(str(self._mapdata[(x,y)]))
-            print(" ".join(mapline))
-        # print("\n")
-    
-    def _init_map(self):
-        self._mapdata = {}
-        for x in range(self._map_limit):
-            for y in range(self._map_limit):
-                mapkey = (x,y)
-                self._mapdata[mapkey] = MAP_UNEXPLORED
-
-    def _is_explored(self, coord):
-        return self._mapdata[coord] in [MAP_FULLY_EXPLORED, MAP_PARTIAL_EXPLORED, MAP_UNEXPLORED]
 
     def _can_move(self):
         cur_x, cur_y = self.location
