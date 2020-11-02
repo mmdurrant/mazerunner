@@ -1,13 +1,11 @@
 
 class CellType():
     Wall  = "x"
-    Self  = "e"
-    Moved = "."
-
+    Floor = "."
 
 class CellStatus():
-    Unexplored = 0
-    Explored = 1
+    Unexplored = False
+    Explored = True
     
     
 class MoveDirection():
@@ -15,3 +13,9 @@ class MoveDirection():
     Up = "^"
     Right = ">"
     Down = "v"
+    
+
+class MoveResponse():
+    Wall = "x"
+    Empty = "e"
+    Moved = "."

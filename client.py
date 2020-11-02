@@ -1,5 +1,5 @@
 
-from constants import CellType, MoveDirection
+from constants import CellType, MoveDirection, MoveResponse
 
 class MazeClient():
     def __init__(self, tcp_socket, byte_encoding):
@@ -7,7 +7,8 @@ class MazeClient():
         self._byte_encoding = byte_encoding
 
     def _send(self, data):
-        self._socket.sendall(data)
+        data_enc = bytearray(data, self._byte_encoding)
+        self._socket.sendall(data_enc)
 
     def _receive(self, length=1):
         buf = b""
@@ -15,13 +16,13 @@ class MazeClient():
         return buf
 
     def cmd_reset(self):
-        msg = b'r'
+        msg = "r"
         self._send(msg)
         reset_msg = self._receive(100).strip()
         assert(str(reset_msg) == str("r (0, 0)"))
 
     def cmd_help(self):
-        msg = b"?"
+        msg = "?"
         self._send(msg)
         help_msg = self._receive(100)
         return help_msg
@@ -39,14 +40,13 @@ class MazeClient():
         return self._cmd_move(MoveDirection.Left)
 
     def _cmd_move(self, direction):
-        msg = bytearray(direction, self._byte_encoding)
-        self._send(msg)
+        self._send(direction)
         move_response = self._receive(100)
         parsed = self._parse_move(move_response)
         return parsed
 
     def cmd_get_current(self):
-        msg = b"\n"
+        msg = "\n"
         self._send(msg)
         current_msg = self._receive(100)
         parsed = self._parse_current(current_msg)
@@ -60,27 +60,22 @@ class MazeClient():
         return coords
 
     def _parse_coordinates(self, data):
-        header_char = data[0]
-        # It's a wall.
-        if header_char == CellType.Wall:
-            pass
-        elif header_char == CellType.Moved:
-            pass
-        elif header_char == CellType.Self:
-            pass
-        else:
-            raise Exception("{} is unknown.".format(header_char))
-        
         c_u = data.index("(") + 1
         assert(c_u == 3)
         c_l = data.index(")")
         coord_str = data[c_u:c_l]
         coords = [int(x.strip()) for x in coord_str.split(",")]
+        # Returns list(x,y)
+        if len(coords) != 2:
+            raise Exception("{} should only have 2 members x and y, parsed from data  \"{}\"".format(coords, data))
         return coords
 
     def _parse_move(self, data):
+        # Moves return "x" if it's a wall, "." if we move to empty floor, and "e" (?) if we no-op
         header_char = data[0]
-        if header_char not in [CellType.Wall, CellType.Moved]:
+        # If not a response we know, bail.
+        if header_char not in [MoveResponse.Empty, MoveResponse.Moved, MoveResponse.Wall]:
             raise Exception("{} move failed".format(header_char))
         coords = self._parse_coordinates(data)
+        # Returns the tuple(char, tuple(x,y))
         return (header_char,coords)
